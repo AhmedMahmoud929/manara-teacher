@@ -60,6 +60,7 @@ export const columns: ColumnDef<ICourse>[] = [
     enableSorting: false,
     enableHiding: false,
   },
+
   // Product
   {
     accessorKey: "id",
@@ -93,6 +94,30 @@ export const columns: ColumnDef<ICourse>[] = [
     },
   },
 
+  // Final Price
+  {
+    accessorKey: "price",
+    header: ({ column }) => {
+      return (
+        <SortCell
+          label="السعر"
+          isAscSorted={column.getIsSorted() === "asc"}
+          className="flex items-center justify-start gap-1 cursor-pointer lg:w-32 whitespace-nowrap"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        />
+      );
+    },
+    cell: ({ row }) => {
+      const price = Number.parseFloat(row.getValue("price"));
+      const formatted = new Intl.NumberFormat("ar-EG", {
+        style: "currency",
+        currency: "EGP",
+      }).format(price);
+
+      return <div className="text-right font-medium">{formatted}</div>;
+    },
+  },
+
   // Average Rating (Stats section starts here)
   {
     accessorKey: "average_rating",
@@ -112,34 +137,34 @@ export const columns: ColumnDef<ICourse>[] = [
         <div className="flex items-center gap-1">
           <Star className="h-4 w-4 text-yellow-500 fill-current" />
           {/* <span>{rating.toFixed(1)}</span> */}
-          <span>5 / -</span>
+          <pre> -</pre>
         </div>
       );
     },
   },
 
-  // Completion Rate
-  {
-    accessorKey: "completion_rate",
-    header: ({ column }) => {
-      return (
-        <SortCell
-          label="معدل الإنجاز"
-          isAscSorted={column.getIsSorted() === "asc"}
-          className="flex items-center justify-start gap-1 cursor-pointer whitespace-nowrap"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        />
-      );
-    },
-    cell: ({ row }) => {
-      const rate = 14; // FIXME: Change the rate to be real;
-      return (
-        <div className="flex items-center gap-1">
-          <span>- %</span>
-        </div>
-      );
-    },
-  },
+  // // Completion Rate
+  // {
+  //   accessorKey: "completion_rate",
+  //   header: ({ column }) => {
+  //     return (
+  //       <SortCell
+  //         label="معدل الإنجاز"
+  //         isAscSorted={column.getIsSorted() === "asc"}
+  //         className="flex items-center justify-start gap-1 cursor-pointer whitespace-nowrap"
+  //         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+  //       />
+  //     );
+  //   },
+  //   cell: ({ row }) => {
+  //     const rate = 14; // FIXME: Change the rate to be real;
+  //     return (
+  //       <div className="flex items-center gap-1">
+  //         <pre> -</pre>
+  //       </div>
+  //     );
+  //   },
+  // },
 
   // Total Lessons
   // {
@@ -183,7 +208,7 @@ export const columns: ColumnDef<ICourse>[] = [
       return (
         <div className="flex items-center gap-1">
           <BookMarked className="h-4 w-4 text-green-500" />
-          <span>- وحدة</span>
+          <pre> -</pre>
         </div>
       );
     },
@@ -207,35 +232,13 @@ export const columns: ColumnDef<ICourse>[] = [
       return (
         <div className="flex items-center gap-1">
           <Clock className="h-4 w-4 text-purple-500" />
-          <span>{hours} ساعة</span>
+          {/* <span>{hours} ساعة</span> */}
+          <pre> -</pre>
         </div>
       );
     },
   },
 
-  // Final Price
-  {
-    accessorKey: "price",
-    header: ({ column }) => {
-      return (
-        <SortCell
-          label="السعر"
-          isAscSorted={column.getIsSorted() === "asc"}
-          className="flex items-center justify-start gap-1 cursor-pointer lg:w-32 whitespace-nowrap"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        />
-      );
-    },
-    cell: ({ row }) => {
-      const price = Number.parseFloat(row.getValue("price"));
-      const formatted = new Intl.NumberFormat("ar-EG", {
-        style: "currency",
-        currency: "EGP",
-      }).format(price);
-
-      return <div className="text-right font-medium">{formatted}</div>;
-    },
-  },
   // Is Active
   {
     accessorKey: "is_active",

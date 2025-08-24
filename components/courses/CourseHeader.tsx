@@ -97,9 +97,7 @@ export function CourseHeader({
                 <Clock className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">
-                  {formatDuration(totalDuration)}
-                </p>
+                <p className="text-2xl font-bold">-</p>
                 <p className="text-sm text-gray-600">المدة الإجمالية</p>
               </div>
             </div>

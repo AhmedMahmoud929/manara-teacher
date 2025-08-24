@@ -106,32 +106,13 @@ export function SortableLesson({
         </div>
         <div>
           <p className="font-medium text-sm">{item.title}</p>
-          <div className="flex items-center gap-2 mt-1">
-            {isLesson ? (
-              <>
-                {lesson?.is_free && (
-                  <Badge
-                    variant="secondary"
-                    className="rounded-md !py-1 !text-xs"
-                  >
-                    مجاني
-                  </Badge>
-                )}
-              </>
-            ) : (
-              <>
-                <Badge variant="outline" className="!text-xs">
-                  15 د
-                </Badge>
-                <Badge
-                  variant="secondary"
-                  className="rounded-md !py-1 !text-xs"
-                >
-                  12 سؤال
-                </Badge>
-              </>
-            )}
-          </div>
+          {lesson?.is_free ? (
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="secondary" className="rounded-md !py-1 !text-xs">
+                مجاني
+              </Badge>
+            </div>
+          ) : null}
         </div>
       </div>
       <div className="flex items-center">
