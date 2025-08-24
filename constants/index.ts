@@ -1,5 +1,5 @@
-export const USER_COOKIE = "warqah-store.user";
-export const TOKEN_COOKIE = "warqah-store.token";
+export const USER_COOKIE = "manara.user";
+export const TOKEN_COOKIE = "manara.token";
 
 export const YEAR_OPTIONS = [
   { value: "10", label: "الصف الأول الثانوي" },

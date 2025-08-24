@@ -26,12 +26,17 @@ import {
 } from "@/components/ui/form";
 import { IExam } from "@/types/course";
 import TextFormEle from "../ui/form/text-form-element";
+import {
+  useCreateExamMutation,
+  useUpdateExamMutation,
+} from "@/redux/features/exams/examsApi";
+import { toast } from "sonner";
 
 // Zod schema for exam validation
 const examSchema = z.object({
   title: z.string().min(1, "عنوان الامتحان مطلوب"),
-  can_resume: z.boolean().default(true),
-  show_answers_after_finish: z.boolean().default(false),
+  can_resume: z.boolean(),
+  show_answers_after_finish: z.boolean(),
   start_date: z.string().min(1, "تاريخ البدء مطلوب"),
   end_date: z.string().min(1, "تاريخ الانتهاء مطلوب"),
 });
@@ -41,26 +46,58 @@ type ExamFormValues = z.infer<typeof examSchema>;
 interface AddExamDialogProps {
   editingExam?: IExam;
   children: React.ReactNode;
+  courseId: number;
+  chapterId: number;
 }
 
-export function AddExamDialog({ editingExam, children }: AddExamDialogProps) {
+export function AddExamDialog({
+  editingExam,
+  children,
+  courseId,
+  chapterId,
+}: AddExamDialogProps) {
   const [isOpen, onOpenChange] = useState(false);
+  const [createExam, { isLoading: isCreating }] = useCreateExamMutation();
+  const [updateExam, { isLoading: isUpdating }] = useUpdateExamMutation();
+
   const form = useForm<ExamFormValues>({
-    // resolver: zodResolver(examSchema),
-    // defaultValues: {
-    //   title: editingExam?.title || "",
-    //   can_resume: editingExam ? true : true, // Default from your example
-    //   show_answers_after_finish: editingExam ? false : false, // Default from your example
-    //   start_date: editingExam ? "" : "", // Format: "2025-08-13T09:00"
-    //   end_date: editingExam ? "" : "", // Format: "2025-08-15T23:59"
-    // },
+    resolver: zodResolver(examSchema),
+    defaultValues: {
+      title: editingExam?.title || "",
+      can_resume: editingExam ? true : true, // Default from your example
+      show_answers_after_finish: editingExam ? false : false, // Default from your example
+      start_date: editingExam ? "" : "", // Format: "2025-08-13T09:00"
+      end_date: editingExam ? "" : "", // Format: "2025-08-15T23:59"
+    },
   });
 
-  const handleSubmit = (data: ExamFormValues) => {
-    console.log("Exam data:", data);
-    // Here you would typically call your API to create/update the exam
-    onOpenChange(false);
-    form.reset();
+  const handleSubmit = async (data: ExamFormValues) => {
+    try {
+      if (editingExam) {
+        // Update existing exam
+        await updateExam({
+          courseId,
+          chapterId,
+          examId: editingExam.id,
+          data,
+        }).unwrap();
+        toast.success("تم تحديث الامتحان بنجاح");
+      } else {
+        // Create new exam
+        await createExam({
+          ...data,
+          course_id: courseId,
+          chapter_id: chapterId,
+        }).unwrap();
+        toast.success("تم إضافة الامتحان بنجاح");
+      }
+      onOpenChange(false);
+      form.reset();
+    } catch (error) {
+      toast.error(
+        editingExam ? "فشل في تحديث الامتحان" : "فشل في إضافة الامتحان"
+      );
+    }
   };
 
   const handleCancel = () => {
@@ -68,9 +105,13 @@ export function AddExamDialog({ editingExam, children }: AddExamDialogProps) {
     form.reset();
   };
 
+  const isSubmitting = isCreating || isUpdating;
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogTrigger asChild>
+        <div>{children}</div>
+      </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="text-3xl text-start">
@@ -161,8 +202,8 @@ export function AddExamDialog({ editingExam, children }: AddExamDialogProps) {
             </div>
 
             <DialogFooter className="gap-2">
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting
                   ? "جاري الحفظ..."
                   : editingExam
                   ? "حفظ التغييرات"

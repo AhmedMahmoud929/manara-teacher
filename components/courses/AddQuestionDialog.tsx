@@ -11,12 +11,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormDescription } from "@/components/ui/form";
-import { IQuestion, IAnswer } from "@/types/course";
+import { IQuestion } from "@/types/course";
 import TextFormEle from "../ui/form/text-form-element";
-import SelectFormEle from "../ui/form/select-form-element";
 import { Plus, Trash2, Upload } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -28,17 +28,40 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "../ui/switch";
+import {
+  useCreateQuestionMutation,
+  useUpdateQuestionMutation,
+} from "@/redux/features/exams/examsApi";
+import { handleReqWithToaster } from "@/lib/handle-req-with-toaster";
 
 // Zod schema for question validation
 const questionSchema = z.object({
   question_text: z.string().min(1, "نص السؤال مطلوب"),
-  question_image: z.any().optional(),
+  question_image: z
+    .any()
+    .optional()
+    .refine(
+      (file) => {
+        if (!file) return true; // Optional field
+        return file instanceof File && file.type.startsWith("image/");
+      },
+      { message: "يجب أن تكون صورة صالحة" }
+    ),
   explanation: z.string().optional(),
   answers: z
     .array(
       z.object({
         answer_text: z.string().min(1, "نص الإجابة مطلوب"),
-        answer_image: z.any().optional(),
+        answer_image: z
+          .any()
+          .optional()
+          .refine(
+            (file) => {
+              if (!file) return true; // Optional field
+              return file instanceof File && file.type.startsWith("image/");
+            },
+            { message: "يجب أن تكون صورة صالحة" }
+          ),
         is_correct: z.boolean(),
       })
     )
@@ -48,32 +71,36 @@ const questionSchema = z.object({
 
 type QuestionFormValues = z.infer<typeof questionSchema>;
 
-interface AddQuestionDialogProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSave: (data: QuestionFormValues & { exam_id: number }) => void;
-  editingQuestion?: IQuestion;
-  examId: number;
-}
-
 export function AddQuestionDialog({
-  isOpen,
-  onOpenChange,
-  onSave,
+  courseId,
+  chapterId,
   editingQuestion,
   examId,
-}: AddQuestionDialogProps) {
+  children,
+}: {
+  editingQuestion?: IQuestion;
+  courseId: number;
+  chapterId: number;
+  examId: number;
+  children: React.ReactNode;
+}) {
+  const [isOpen, onOpenChange] = useState(false);
   const form = useForm<QuestionFormValues>({
     resolver: zodResolver(questionSchema),
     defaultValues: {
       question_text: "",
       explanation: "",
       answers: [
-        { answer_text: "", is_correct: false },
+        { answer_text: "", is_correct: true },
         { answer_text: "", is_correct: false },
       ],
     },
   });
+
+  const [createQuestion, { isLoading: isCreating }] =
+    useCreateQuestionMutation();
+  const [updateQuestion, { isLoading: isUpdating }] =
+    useUpdateQuestionMutation();
 
   const { fields, append, remove, replace } = useFieldArray({
     control: form.control,
@@ -111,26 +138,77 @@ export function AddQuestionDialog({
     }
   }, [editingQuestion, isOpen, form]);
 
-  const handleSubmit = (data: QuestionFormValues) => {
-    // Ensure at least one answer is marked as correct
-    const hasCorrectAnswer = data.answers.some((answer) => answer.is_correct);
-    if (!hasCorrectAnswer) {
-      form.setError("answers", {
-        type: "manual",
-        message: "يجب تحديد إجابة صحيحة واحدة على الأقل",
-      });
-      return;
+  const handleSubmit = async (questionData: any) => {
+    // Create FormData object
+    const formData = new FormData();
+
+    // Add basic question data
+    formData.append("question_text", questionData.question_text);
+    if (questionData.explanation) {
+      formData.append("explanation", questionData.explanation);
+    }
+    if (questionData.level) {
+      formData.append("level", questionData.level);
     }
 
-    // Clear any previous errors
-    form.clearErrors("answers");
+    // Add question image if exists
+    if (questionData.question_image instanceof File) {
+      formData.append("question_image", questionData.question_image);
+    }
 
-    onSave({ ...data, exam_id: examId });
-    onOpenChange(false);
+    // Add exam_id for create operation
+    if (!editingQuestion) {
+      formData.append("exam_id", examId.toString());
+    }
+
+    // Add answers data
+    questionData.answers.forEach((answer: any, index: number) => {
+      formData.append(`answers[${index}][answer_text]`, answer.answer_text);
+      formData.append(
+        `answers[${index}][is_correct]`,
+        answer.is_correct.toString()
+      );
+
+      // Add answer image if exists
+      if (answer.answer_image instanceof File) {
+        formData.append(`answers[${index}][answer_image]`, answer.answer_image);
+      }
+
+      // Add answer ID for update operations
+      if (editingQuestion && editingQuestion.answers?.[index]?.id) {
+        formData.append(
+          `answers[${index}][id]`,
+          editingQuestion.answers?.[index].id.toString()
+        );
+      }
+    });
+
+    if (editingQuestion) {
+      handleReqWithToaster("جاري تعديل الإختبار...", async () => {
+        await updateQuestion({
+          courseId,
+          chapterId,
+          examId,
+          questionId: editingQuestion.id,
+          data: formData,
+        }).unwrap();
+      });
+    } else {
+      handleReqWithToaster("جاري إضافة السؤال...", async () => {
+        await createQuestion({
+          courseId,
+          chapterId,
+          examId,
+          data: formData,
+        }).unwrap();
+      });
+    }
+
+    handleDialogClose(false);
   };
 
-  const handleCancel = () => {
-    onOpenChange(false);
+  const handleDialogClose = (open: boolean) => {
+    onOpenChange(open);
     form.reset();
   };
 
@@ -147,7 +225,8 @@ export function AddQuestionDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleDialogClose}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-3xl text-start">
@@ -317,7 +396,11 @@ export function AddQuestionDialog({
                   ? "حفظ التغييرات"
                   : "إضافة السؤال"}
               </Button>
-              <Button type="button" variant="outline" onClick={handleCancel}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleDialogClose(false)}
+              >
                 إلغاء
               </Button>
             </DialogFooter>

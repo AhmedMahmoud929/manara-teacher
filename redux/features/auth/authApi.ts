@@ -1,7 +1,7 @@
 import { baseApi } from "@/redux/app/baseApi";
 import { setUser } from "./authSlice";
-import { IUser, LoginUserDto, RegisterUserDto } from "@/types/(waraqah)/user";
-import { SuccessResponse } from "@/types/(waraqah)";
+import { IUser, LoginUserDto, RegisterUserDto } from "@/types/user";
+import { SuccessResponse } from "@/types";
 
 const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({

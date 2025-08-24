@@ -10,7 +10,7 @@ import {
   EyeOff,
   XCircle,
 } from "lucide-react";
-import WarqaLogo from "@/components/website/shared/WarqaLogo";
+import Logo from "@/components/shared/Logo";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,7 +21,7 @@ import PasswordSuffix from "@/components/ui/form/password-suffix";
 import SelectFormEle from "@/components/ui/form/select-form-element";
 import { UAParser, IResult } from "ua-parser-js";
 import { handleReqWithToaster } from "@/lib/handle-req-with-toaster";
-import { RegisterUserDto } from "@/types/(waraqah)/user";
+import { RegisterUserDto } from "@/types/user";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useRegisterMutation } from "@/redux/features/auth/authApi";
@@ -90,7 +90,7 @@ export default function Register() {
     <>
       {/* Logo */}
       <div className="self-start">
-        <WarqaLogo size="sm" />
+        <Logo />
       </div>
 
       {/* Form */}

@@ -1,5 +1,5 @@
 import { USER_COOKIE, TOKEN_COOKIE } from "@/constants/index";
-import { IAuthState } from "@/types/(waraqah)/user";
+import { IAuthState } from "@/types/user";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { setCookie, getCookie, deleteCookie, hasCookie } from "cookies-next";
 

@@ -1,4 +1,4 @@
-import ProductCell from "@/components/shared/ProductCell";
+import CourseCell from "@/components/shared/CourseCell";
 import SortCell from "@/components/shared/SortCell";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColumnDef } from "@tanstack/react-table";
@@ -20,7 +20,7 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DeleteConfirmationDialog } from "@/components/shared/DeleteConfirmationDialog";
-import { useDeleteProductMutation } from "@/redux/features/products/productsApi";
+import { useDeleteCourseMutation } from "@/redux/features/courses/coursesApi";
 import { handleReqWithToaster } from "@/lib/handle-req-with-toaster";
 import { ICourse } from "@/types/course";
 import {
@@ -30,6 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { API_URL } from "@/constants/env";
 
 // Define the columns
 export const columns: ColumnDef<ICourse>[] = [
@@ -73,11 +74,14 @@ export const columns: ColumnDef<ICourse>[] = [
       );
     },
     cell: ({ row }) => {
-      const image = row.original.image;
+      console.log(row.original.image);
+      const image = row.original.image.startsWith("http")
+        ? row.original.image
+        : `${API_URL}/${row.original.image}`;
       const imageUrl = image;
       return (
         <div className="p-2">
-          <ProductCell
+          <CourseCell
             title={row.original.title}
             id={row.original.id}
             image={imageUrl}
@@ -103,11 +107,12 @@ export const columns: ColumnDef<ICourse>[] = [
       );
     },
     cell: ({ row }) => {
-      const rating = Number(row.original.average_rating || 0);
+      const rating = 4.2; // FIXME: Change the rating to be real;
       return (
         <div className="flex items-center gap-1">
           <Star className="h-4 w-4 text-yellow-500 fill-current" />
-          <span>{rating.toFixed(1)}</span>
+          {/* <span>{rating.toFixed(1)}</span> */}
+          <span>5 / -</span>
         </div>
       );
     },
@@ -127,38 +132,38 @@ export const columns: ColumnDef<ICourse>[] = [
       );
     },
     cell: ({ row }) => {
-      const rate = Number(row.original.completion_rate || 0);
+      const rate = 14; // FIXME: Change the rate to be real;
       return (
         <div className="flex items-center gap-1">
-          <span>{rate}%</span>
+          <span>- %</span>
         </div>
       );
     },
   },
 
   // Total Lessons
-  {
-    accessorKey: "total_lessons",
-    header: ({ column }) => {
-      return (
-        <SortCell
-          label="عدد الدروس"
-          isAscSorted={column.getIsSorted() === "asc"}
-          className="flex items-center justify-start gap-1 cursor-pointer whitespace-nowrap lg:w-32"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        />
-      );
-    },
-    cell: ({ row }) => {
-      const lessons = Number(row.original.total_lessons || 0);
-      return (
-        <div className="flex items-center gap-1">
-          <PlayCircle className="h-4 w-4 text-blue-500" />
-          <span>{lessons} درس</span>
-        </div>
-      );
-    },
-  },
+  // {
+  //   accessorKey: "total_lessons",
+  //   header: ({ column }) => {
+  //     return (
+  //       <SortCell
+  //         label="عدد الدروس"
+  //         isAscSorted={column.getIsSorted() === "asc"}
+  //         className="flex items-center justify-start gap-1 cursor-pointer whitespace-nowrap lg:w-32"
+  //         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+  //       />
+  //     );
+  //   },
+  //   cell: ({ row }) => {
+  //     const lessons = 24; // FIXME: Change the lessons to be real;
+  //     return (
+  //       <div className="flex items-center gap-1">
+  //         <PlayCircle className="h-4 w-4 text-blue-500" />
+  //         <span>- درس</span>
+  //       </div>
+  //     );
+  //   },
+  // },
 
   // Total Units
   {
@@ -174,11 +179,11 @@ export const columns: ColumnDef<ICourse>[] = [
       );
     },
     cell: ({ row }) => {
-      const units = Number(row.original.total_units || 0);
+      const units = 40; // FIXME: Change the units to be real
       return (
         <div className="flex items-center gap-1">
           <BookMarked className="h-4 w-4 text-green-500" />
-          <span>{units} وحدة</span>
+          <span>- وحدة</span>
         </div>
       );
     },
@@ -198,7 +203,7 @@ export const columns: ColumnDef<ICourse>[] = [
       );
     },
     cell: ({ row }) => {
-      const hours = Number(row.original.duration_hours || 0);
+      const hours = 12; // FIXME: Change the hours to be real
       return (
         <div className="flex items-center gap-1">
           <Clock className="h-4 w-4 text-purple-500" />
@@ -266,33 +271,58 @@ export const columns: ColumnDef<ICourse>[] = [
   {
     id: "actions",
     header: () => <div className="text-center text-base w-16">إجراء</div>,
-    cell: ({ row }) => (
-      <div className="flex-center">
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Button size={"icon"} variant={"ghost"}>
-              <EllipsisVertical />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuItem className="cursor-pointer">
-              <Link href={`/courses/${row.original.id}`} className="flex gap-2">
-                <Eye className="ml-2 h-4 w-4" />
-                عرض التفاصيل
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer">
-              <Pencil className="ml-2 h-4 w-4" />
-              تعديل
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer text-red-600">
-              <Trash2 className="ml-2 h-4 w-4" />
-              حذف
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const [deleteCourse] = useDeleteCourseMutation();
+
+      const handleDelete = () => {
+        handleReqWithToaster("جاري حذف الدورة...", async () => {
+          await deleteCourse(row.original.id).unwrap();
+        });
+      };
+
+      return (
+        <div className="flex-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <Button size={"icon"} variant={"ghost"}>
+                <EllipsisVertical />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuItem className="cursor-pointer">
+                <Link
+                  href={`/courses/${row.original.id}`}
+                  className="flex gap-2"
+                >
+                  <Eye className="ml-2 h-4 w-4" />
+                  عرض التفاصيل
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer">
+                <Link
+                  href={`/courses/${row.original.id}/edit`}
+                  className="flex gap-2"
+                >
+                  <Pencil className="ml-2 h-4 w-4" />
+                  تعديل
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <DeleteConfirmationDialog
+                  onDelete={handleDelete}
+                  name={"الدورة"}
+                >
+                  <div className="flex items-center gap-2 text-red-600 py-1 hover:bg-red-50/50 w-full cursor-pointer">
+                    <Trash2 className="ml-4 h-4 w-4" />
+                    حذف
+                  </div>
+                </DeleteConfirmationDialog>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      );
+    },
   },
 ];

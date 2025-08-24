@@ -143,7 +143,7 @@ export default function Dashboard() {
           <LineChartCard
             title="تقدم الطلاب"
             data={
-              studentProgressChart.data.map((s) => ({
+              studentProgressChart.data.map((s: any) => ({
                 name: s.date,
                 value: Number(s.total),
               })) || []
@@ -176,7 +176,7 @@ export default function Dashboard() {
           <PieChartCard
             title="أفضل الطلاب أداءً"
             data={
-              topPerformingStudents.data.map((s) => ({
+              topPerformingStudents.data.map((s: any) => ({
                 name: s.product_name, // This would be student name in real implementation
                 value: s.percentage,
               })) || []

@@ -10,7 +10,7 @@ import * as z from "zod";
 import { Form } from "@/components/ui/form";
 import TextFormEle from "@/components/ui/form/text-form-element";
 import PasswordSuffix from "@/components/ui/form/password-suffix";
-import { LoginUserDto } from "@/types/(waraqah)/user";
+import { LoginUserDto } from "@/types/user";
 import { useLoginMutation } from "@/redux/features/auth/authApi";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -67,8 +67,8 @@ export default function Login() {
   useEffect(() => {
     if (isAdmin)
       form.reset({
-        login: "admin@example.com",
-        password: "123456",
+        login: "instructor@example.com",
+        password: "12345678",
       });
   }, [isAdmin, form]);
 

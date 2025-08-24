@@ -1,9 +1,8 @@
 "use client";
-import { usePathname, useRouter } from "next/navigation";
-import React from "react";
+import { usePathname, useRouter, useParams } from "next/navigation";
+import React, { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -14,63 +13,107 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import TextFormEle from "@/components/ui/form/text-form-element";
-import CounterFormEle from "@/components/ui/form/counter-form-element";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import Image from "next/image";
 import { Plus, Undo2 } from "lucide-react";
 import Link from "next/link";
 import SelectFormEle from "@/components/ui/form/select-form-element";
 import { SEMESTER_OPTIONS, YEAR_OPTIONS } from "@/constants";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useCreateCourseMutation } from "@/redux/features/courses/coursesApi";
-
 import {
-  CreateCourseFields,
-  createCourseSchema,
-} from "@/schemas/courses/create-course.schema";
+  useUpdateCourseMutation,
+  useGetSingleCourseQuery,
+} from "@/redux/features/courses/coursesApi";
+import {
+  UpdateCourseFields,
+  updateCourseSchema,
+} from "@/schemas/courses/update-course.schema";
 import { handleReqWithToaster } from "@/lib/handle-req-with-toaster";
-import CourseSkeleton from "@/components/courses/CourseSkeleton";
 
-function NewCoursePage() {
+function EditCoursePage() {
   const router = useRouter();
+  const params = useParams();
+  const courseId = parseInt(params.id as string);
   const [outcome, setOutcome] = React.useState("");
   const [coverPreview, setCoverPreview] = React.useState<string | null>(null);
 
-  // Add the mutation hook
-  const [createCourse, { isLoading }] = useCreateCourseMutation();
+  // Fetch existing course data
+  const { data: courseData, isLoading: isLoadingCourse } =
+    useGetSingleCourseQuery(courseId);
+  const [updateCourse, { isLoading }] = useUpdateCourseMutation();
 
-  const form = useForm<CreateCourseFields>({
-    resolver: zodResolver(createCourseSchema),
+  const form = useForm<UpdateCourseFields>({
+    resolver: zodResolver(updateCourseSchema),
     defaultValues: {
       is_active: true,
     },
   });
+
   const learningOutcomes = (form.watch("learningOutcomes") as string[]) || [];
 
-  const resetForm = () => form.reset();
+  // Pre-fill form with existing course data
+  useEffect(() => {
+    if (courseData?.data) {
+      const course = courseData.data;
+      form.reset({
+        name: course.title,
+        description: course.description,
+        brief: course.brief || "",
+        price: Number(course.price),
+        study_year_id: course.study_year_id?.toString() || "",
+        semester_id: course.semester_id?.toString() || "",
+        is_active: Boolean(course.is_active),
+        learningOutcomes: course.learning_outcomes || [],
+      });
 
-  const onSubmit = (values: CreateCourseFields) =>
-    handleReqWithToaster("جاري إنشاء دورة جديدة...", async () => {
+      // Set cover preview if exists
+      if (course.image) {
+        setCoverPreview(course.image);
+      }
+    }
+  }, [courseData, form]);
+
+  const resetForm = () => {
+    if (courseData?.data) {
+      const course = courseData.data;
+      form.reset({
+        name: course.title,
+        description: course.description,
+        brief: course.brief || "",
+        price: Number(course.price),
+        study_year_id: course.study_year_id?.toString() || "",
+        semester_id: course.semester_id?.toString() || "",
+        is_active: Boolean(course.is_active),
+        learningOutcomes: course.learning_outcomes || [],
+      });
+    }
+  };
+
+  const onSubmit = (values: UpdateCourseFields) =>
+    handleReqWithToaster("جاري تحديث الدورة...", async () => {
       const formData = new FormData();
       formData.append("title", values.name);
       formData.append("description", values.description);
+      formData.append("brief", values.brief);
       formData.append("price", values.price.toString());
       formData.append("study_year_id", values.study_year_id);
+      formData.append("semester_id", values.semester_id);
       formData.append("is_active", values.is_active ? "1" : "0");
-      formData.append("image", values.cover);
       formData.append(
         "learning_outcomes",
         JSON.stringify(values.learningOutcomes)
       );
 
-      await createCourse(formData).unwrap();
+      // Only append image if a new one is selected
+      if (values.cover) {
+        formData.append("image", values.cover);
+      }
 
-      toast.success("🎉 تم إنشاء الدورة بنجاح!");
-      resetForm();
+      await updateCourse({ id: courseId, data: formData }).unwrap();
 
+      toast.success("🎉 تم تحديث الدورة بنجاح!");
       router.push("/courses");
     });
 
@@ -78,28 +121,40 @@ function NewCoursePage() {
     const file = e.target.files?.[0];
     if (file) {
       form.setValue("cover", file);
-      form.clearErrors("cover");
       const reader = new FileReader();
-      reader.onload = () => setCoverPreview(reader.result as string);
+      reader.onload = () => {
+        setCoverPreview(reader.result as string);
+      };
       reader.readAsDataURL(file);
     }
   };
+
   const addOutcome = () => {
     if (!outcome.trim()) return;
     form.setValue("learningOutcomes", [...learningOutcomes, outcome.trim()]);
-    form.clearErrors("learningOutcomes");
     setOutcome("");
   };
+
   const removeOutcome = (index: number) => {
     const newOutcomes = [...learningOutcomes];
     newOutcomes.splice(index, 1);
     form.setValue("learningOutcomes", newOutcomes);
   };
 
+  if (isLoadingCourse) {
+    return (
+      <div className="w-full px-2 md:px-4 lg:px-8 py-4">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">جاري تحميل بيانات الدورة...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full px-2 md:px-4 lg:px-8 py-4">
       <div className="flex items-center justify-between flex-col gap-2 sm:flex-row mb-4">
-        <h1 className="text-32 font-semibold">إنشاء دورة جديدة</h1>
+        <h1 className="text-32 font-semibold">تعديل الدورة</h1>
         <Link href={"/courses"}>
           <Button icon={<Undo2 />} dir="ltr" className="rounded-lg h-10 px-6">
             العودة
@@ -296,7 +351,7 @@ function NewCoursePage() {
                 className="w-full md:w-auto"
                 disabled={isLoading}
               >
-                {isLoading ? "جاري الإنشاء..." : "إنشاء الدورة"}
+                {isLoading ? "جاري التحديث..." : "تحديث الدورة"}
               </Button>
               <Button
                 type="button"
@@ -305,7 +360,7 @@ function NewCoursePage() {
                 className="w-full md:w-auto"
                 disabled={isLoading}
               >
-                إلغاء
+                إلغاء التغييرات
               </Button>
             </div>
           </form>
@@ -315,4 +370,4 @@ function NewCoursePage() {
   );
 }
 
-export default NewCoursePage;
+export default EditCoursePage;

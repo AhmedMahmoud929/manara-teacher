@@ -1,5 +1,5 @@
 import { baseApi } from "@/redux/app/baseApi";
-import { SuccessResponse } from "@/types/(waraqah)";
+import { SuccessResponse } from "@/types";
 
 export const dashboardApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({

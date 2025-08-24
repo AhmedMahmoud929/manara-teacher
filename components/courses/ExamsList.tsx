@@ -8,7 +8,7 @@ import { IExam } from "@/types/course";
 
 interface ExamsListProps {
   exams: IExam[];
-  courseId: string;
+  courseId: number;
   router: any;
   formatDuration: (minutes: number) => string;
   handleDeleteExam: (examId: number) => void;

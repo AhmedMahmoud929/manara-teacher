@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { toast } from "sonner";
 import { toastErr } from "./toast-err";
 import { RootState } from "./store";
-import { ErrorResponse, SuccessResponse } from "@/types/(waraqah)";
+import { ErrorResponse, SuccessResponse } from "@/types";
 import { deleteCookie, getCookie } from "cookies-next";
 import { TOKEN_COOKIE, USER_COOKIE } from "@/constants";
 
@@ -12,6 +12,7 @@ const baseQuery = fetchBaseQuery({
   baseUrl: API_URL,
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.token;
+    console.log(token)
     if (token) headers.set("authorization", `Bearer ${token}`);
     return headers;
   },
@@ -60,6 +61,11 @@ export const baseApi = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithInterceptor,
   tagTypes: [
+    "Course",
+    "Unit",
+    "Exam",
+    "Question",
+    "Auth",
     "Stats",
     "Cart",
     "Category",

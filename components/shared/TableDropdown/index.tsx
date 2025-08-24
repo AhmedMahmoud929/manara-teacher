@@ -8,7 +8,6 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { DeleteConfirmationDialog } from "../DeleteConfirmationDialog";
-import { EditCategorySheet } from "../../categories/EditCategorySheet";
 
 export function TableDropdown({
   onDelete,
